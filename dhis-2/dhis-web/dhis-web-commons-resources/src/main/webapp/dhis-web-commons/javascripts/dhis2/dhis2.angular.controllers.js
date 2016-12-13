@@ -485,126 +485,29 @@ var d2Controllers = angular.module('d2Controllers', [])
     });
 })
 
-.controller('OrgUnitTreeController', function($scope, $modalInstance, OrgUnitFactory, orgUnitId, orgUnitNames) {
-    
+.controller('OrgUnitTreeController', function($scope, $modalInstance, OrgUnitFactory, orgUnitId) {
+
     $scope.model = {selectedOrgUnitId: orgUnitId ? orgUnitId : null};
-    $scope.orgUnitNames = orgUnitNames;
 
-    function expandOrgUnit( orgUnit, ou ){
-        if( ou.path.indexOf( orgUnit.path ) !== -1 ){
-            orgUnit.show = true;
-        }
-
-        orgUnit.hasChildren = orgUnit.children && orgUnit.children.length > 0 ? true : false;
-        if( orgUnit.hasChildren ){
-            for( var i=0; i< orgUnit.children.length; i++){
-                if( ou.path.indexOf( orgUnit.children[i].path ) !== -1 ){
-                    orgUnit.children[i].show = true;
-                    expandOrgUnit( orgUnit.children[i], ou );
-                }
-            }
-        }
-        return orgUnit;
-    };
-
-    function attachOrgUnit( orgUnits, orgUnit ){
-        for( var i=0; i< orgUnits.length; i++){
-            if( orgUnits[i].id === orgUnit.id ){
-                orgUnits[i] = orgUnit;
-                orgUnits[i].show = true;
-                orgUnits[i].hasChildren = orgUnits[i].children && orgUnits[i].children.length > 0 ? true : false;
-                return;
-            }
-            if( orgUnits[i].children && orgUnits[i].children.length > 0 ){
-                attachOrgUnit(orgUnits[i].children, orgUnit);
-            }
-        }
-        return orgUnits;
-    };
-
-    //Get orgunits for the logged in user
-    OrgUnitFactory.getViewTreeRoot().then(function(response) {
-        $scope.orgUnits = response.organisationUnits;
-        var selectedOuFetched = false;
-        var levelsFetched = 0;
-        angular.forEach($scope.orgUnits, function(ou){
-            ou.show = true;
-            levelsFetched = ou.level;
-            if( orgUnitId && orgUnitId === ou.id ){
-                selectedOuFetched = true;
-            }
-            angular.forEach(ou.children, function(o){
-                levelsFetched = o.level;
-                o.hasChildren = o.children && o.children.length > 0 ? true : false;
-                if( orgUnitId && !selectedOuFetched && orgUnitId === ou.id ){
-                    selectedOuFetched = true;
-                }
-            });
-        });
-
-        levelsFetched = levelsFetched > 0 ? levelsFetched - 1 : levelsFetched;
-
-        if( orgUnitId && !selectedOuFetched ){
-            var parents = null;
-            OrgUnitFactory.get( orgUnitId ).then(function( ou ){
-                if( ou && ou.path ){
-                    parents = ou.path.substring(1, ou.path.length);
-                    parents = parents.split("/");
-                    if( parents && parents.length > 0 ){
-                        var url = "fields=id,displayName,path,level,";
-                        for( var i=levelsFetched; i<ou.level; i++){
-                            url = url + "children[id,displayName,level,path,";
-                        }
-
-                        url = url.substring(0, url.length-1);
-                        for( var i=levelsFetched; i<ou.level; i++){
-                            url = url + "]";
-                        }
-
-                        OrgUnitFactory.getOrgUnits(parents[levelsFetched], url).then(function(response){
-                            if( response && response.organisationUnits && response.organisationUnits[0] ){
-                                response.organisationUnits[0].show = true;
-                                response.organisationUnits[0].hasChildren = response.organisationUnits[0].children && response.organisationUnits[0].children.length > 0 ? true : false;
-                                response.organisationUnits[0] = expandOrgUnit(response.organisationUnits[0], ou );
-                                $scope.orgUnits = attachOrgUnit( $scope.orgUnits, response.organisationUnits[0] );
-                            }
-                        });
-                    }
-                }
-            });
-        }
+    OrgUnitFactory.getOus(orgUnitId).then(function (orgUnits) {
+        $scope.orgUnits = orgUnits;
     });
 
 
     //expand/collapse of search orgunit tree
     $scope.expandCollapse = function(orgUnit) {
-        if( orgUnit.hasChildren ){
-            //Get children for the selected orgUnit
-            OrgUnitFactory.getChildren(orgUnit.id).then(function(ou) {
-                orgUnit.show = !orgUnit.show;
-                orgUnit.hasChildren = false;
-                orgUnit.children = ou.children;
-                angular.forEach(orgUnit.children, function(ou){
-                    ou.hasChildren = ou.children && ou.children.length > 0 ? true : false;
-                });
-            });
-        }
-        else{
-            orgUnit.show = !orgUnit.show;
-        }
+        OrgUnitFactory.expandCollapse(orgUnit);
     };
 
     $scope.setSelectedOrgUnit = function( orgUnit ){
-    	$scope.model.selectedOrgUnit = {id: orgUnit.id, displayName: orgUnit.displayName};
         $scope.model.selectedOrgUnitId = orgUnit.id;
-        $scope.orgUnitNames[orgUnit.id] = orgUnit.displayName;
     };
 
     $scope.select = function () {
-        $modalInstance.close( {selected: $scope.model.selectedOrgUnit, names: $scope.orgUnitNames} );
+        $modalInstance.close( $scope.model.selectedOrgUnitId );
     };
 
-    $scope.close = function(){        
+    $scope.close = function(){
         $modalInstance.close();
     };
 });

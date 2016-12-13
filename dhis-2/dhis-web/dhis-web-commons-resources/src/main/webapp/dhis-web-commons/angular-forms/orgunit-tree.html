@@ -1,22 +1,35 @@
-<div class="modal-header page">
+<div class="modal-header page"  ng-if="!model.mainTree">
     <h3>{{'org_unit'| translate}}</h3>
 </div>
-<div class="modal-body page">
-    <div class="org-unit-tree" data-stop-propagation="true">
+<div ng-show="model.mainTree" style="margin-top:20px">
+
+    <img id="searchIcon" src="../images/search.png" style="cursor: pointer" ng-click="model.showSearchField = !model.showSearchField" title="{{searchOusLabel}}">
+            <span ng-show="model.showSearchField" id="searchSpan" style="width:100%;">
+                <input type="text" id="searchField" name="key"/>
+                <!--<input type="button" value="findLabel" ng-click="findByName()"/>-->
+            </span>
+</div>
+<div ng-class="{'modal-body page': !model.mainTree}">
+    <div id="orgUnitTree" class="org-unit-tree" style="cursor: auto;!important" data-stop-propagation="true">
+
         <script type="text/ng-template" id="orgUnitTree.html">
-            <span class="org-unit-tree-button" ng-click="expandCollapse(orgUnit)" ng-show="orgUnit.show && orgUnit.children.length > 0"><i class="fa fa-minus-square-o"></i></span>
-            <span class="org-unit-tree-button" ng-click="expandCollapse(orgUnit)" ng-show="(!orgUnit.show && orgUnit.children.length > 0) || (!orgUnit.show && orgUnit.hasChildren)"><i class="fa fa-plus-square-o"></i></span>
+            <span class="org-unit-tree-button" ng-click="expandCollapse(orgUnit)" ng-show="orgUnit.show && orgUnit.children.length > 0">
+                <i class="fa fa-minus-square-o"></i>
+            </span>
+            <span class="org-unit-tree-button" ng-click="expandCollapse(orgUnit)" ng-show="(!orgUnit.show && orgUnit.children.length > 0) || (!orgUnit.show && orgUnit.hasChildren)">
+                <i class="fa fa-plus-square-o"></i>
+            </span>
             <span class="org-unit-tree-button" ng-click="setSelectedOrgUnit(orgUnit)" ng-class="{'selected-org-unit' : orgUnit.id === model.selectedOrgUnitId}">{{orgUnit.displayName}}</span>
-            <ul class="tree" id="tree" ng-show="orgUnit.show">
-                <li ng-repeat="orgUnit in orgUnit.children | orderBy:'displayName'" ng-include="'orgUnitTree.html'"></li>
+            <ul class="tree" ng-show="orgUnit.show">
+                <li id="orgUnit{{orgUnit.id}}" ng-repeat="orgUnit in orgUnit.children | orderBy:'displayName'" ng-include="'orgUnitTree.html'"></li>
             </ul>
         </script>
-        <ul class="tree" id="tree">
+        <ul class="tree">
             <li ng-repeat="orgUnit in orgUnits | orderBy:'displayName'" ng-include="'orgUnitTree.html'"></li>
         </ul>
     </div>
 </div>
-<div class="modal-footer page">
+<div class="modal-footer page"  ng-if="!model.mainTree">
     <button class="btn btn-primary" data-ng-click="select()">{{'select'| translate}}</button>
     <button class="btn btn-default" data-ng-click="close()">{{'close'| translate}}</button>
 </div>

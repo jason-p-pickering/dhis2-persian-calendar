@@ -717,7 +717,94 @@ var d2Directives = angular.module('d2Directives', [])
                 }
             };
         }
-        
+    };
+})
+
+.directive('d2MainOrgUnitTree', function(OrgUnitFactory, $timeout){
+    return {
+        restrict: 'E',
+        templateUrl: "../dhis-web-commons/angular-forms/orgunit-tree.html",
+        scope: {
+            treeLoaded :"=",
+            updateSelectedOrgUnit :"="
+        },
+        controller: function ($scope) {
+            var selectedOrgUnit = {};
+            var orgUnitIdNameMap = {};
+            $scope.model = {mainTree : true, findLabel:"find", searchKey:"", showSearchField:false};
+            $("#searchField").autocomplete({
+                source: function( request, response ) {
+                    $.get( "api/organisationUnits.json?filter=name:like:"+request.term, function( data ) {
+                        var orgUnitList = data.organisationUnits;
+                        var orgUnitNamesList = $.map( orgUnitList, function( orgUnit ) {
+                            orgUnitIdNameMap[orgUnit.displayName] = orgUnit.id;
+                            return orgUnit.displayName;
+                        });
+                        response(orgUnitNamesList);
+                    })
+                },
+
+                select: function (event, ui) {
+                    var orgUnitName = ui.item.value;
+                    var orgUnitId = orgUnitIdNameMap[orgUnitName];
+                    if($scope.orgUnits && $scope.orgUnits[0] && $scope.orgUnits[0].children)
+                        angular.forEach($scope.orgUnits[0].children, function(ou) {
+                            if(ou.show){
+                                ou.show = false;
+                            }
+                    });
+                    OrgUnitFactory.getOus(orgUnitId).then(function (orgUnits) {
+                        $scope.orgUnits = orgUnits;
+                        $scope.setSelectedOrgUnit(orgUnits.selected);
+                        $timeout(function(){
+                            $("#orgUnitTree").scrollTop(0);
+                            var tagId = "#orgUnit" + orgUnitId;
+                            if ($(tagId).offset()) {
+                                var tagOffset = $(tagId).offset().top;
+                                var treeOffset = $("#orgUnitTree").offset().top;
+                                var offset = tagOffset - treeOffset;
+                                $("#orgUnitTree").animate({scrollTop: offset - 50}, 300);
+                            }
+                        },500);
+
+                    });
+                }
+            });
+
+            OrgUnitFactory.getOus(null).then(function (orgUnits) {
+                orgUnits[0].show = false;
+                $scope.orgUnits = orgUnits;
+                $scope.treeLoaded = true;
+                if(orgUnits && orgUnits[0]) {
+                    updateSelectedOrgUnit(orgUnits[0]);
+                }
+                downloadMetaData();
+            });
+
+            $scope.expandCollapse = function(orgUnit) {
+                OrgUnitFactory.expandCollapse(orgUnit);
+            };
+
+            $scope.setSelectedOrgUnit = function (orgUnit) {
+                //$scope.model.currentOrgUnit = orgUnit;
+                $scope.model.showSearchField = false;
+                OrgUnitFactory.get(orgUnit.id).then(function(ou) {
+                    if($scope.orgUnits && $scope.orgUnits[0] && $scope.orgUnits[0].children &&  ou.path)
+                        angular.forEach($scope.orgUnits[0].children, function(o) {
+                            if(ou.show &&  (ou.path.indexOf(o.id)!== -1)){
+                                ou.show = false;
+                            }
+                        });
+                    updateSelectedOrgUnit(orgUnit);
+                });
+            };
+
+            function updateSelectedOrgUnit(ou) {
+                //selectedOrgUnit = {id: ou.id, displayName: ou.displayName};
+                $scope.model.selectedOrgUnitId = ou.id;
+                $scope.updateSelectedOrgUnit(ou);
+            }
+        }
     };
 })
 
