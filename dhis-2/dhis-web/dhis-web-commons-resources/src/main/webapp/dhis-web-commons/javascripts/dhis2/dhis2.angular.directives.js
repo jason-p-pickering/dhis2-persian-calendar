@@ -82,7 +82,7 @@ var d2Directives = angular.module('d2Directives', [])
                 source: "../dhis-web-commons/ouwt/getOrganisationUnitsByName.action",
                 select: function (event, ui) {
                     $("#searchField").val(ui.item.value);
-                    selection.findByName();
+                    //selection.findByName();
                 }
             });
         }
@@ -728,7 +728,7 @@ var d2Directives = angular.module('d2Directives', [])
             treeLoaded :"=",
             updateSelectedOrgUnit :"="
         },
-        controller: function ($scope) {
+        controller: function ($scope, $location) {
             var selectedOrgUnit = {};
             var orgUnitIdNameMap = {};
             $scope.model = {mainTree : true, findLabel:"find", searchKey:"", showSearchField:false};
@@ -770,13 +770,13 @@ var d2Directives = angular.module('d2Directives', [])
                     });
                 }
             });
-
-            OrgUnitFactory.getOus(null).then(function (orgUnits) {
-                orgUnits[0].show = false;
+            var selectedOrgUnit =  ($location.search()).ou;
+            OrgUnitFactory.getOus(selectedOrgUnit).then(function (orgUnits) {
+                //orgUnits[0].show = false;
                 $scope.orgUnits = orgUnits;
                 $scope.treeLoaded = true;
-                if(orgUnits && orgUnits[0]) {
-                    updateSelectedOrgUnit(orgUnits[0]);
+                if(orgUnits && orgUnits["selected"]) {
+                    updateSelectedOrgUnit(orgUnits["selected"]);
                 }
                 downloadMetaData();
             });

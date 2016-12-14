@@ -1,6 +1,42 @@
 /* Pagination service */
 /* global angular, dhis2, moment */
 
+var dhis2 = dhis2 || {};
+dhis2.ou = dhis2.ou || {};
+dhis2.ou.event = dhis2.ou.event || {};
+
+var OU_STORE_NAME = "dhis2ou";
+var OU_TREE_KEY = "ouTree";
+
+dhis2.ou.event.orgUnitSelected = "dhis2.ou.event.orgUnitSelected";
+
+dhis2.ou.store = null;
+dhis2.ou.memoryOnly = $('html').hasClass('ie7') || $('html').hasClass('ie8');
+
+$(function ()
+{
+    var adapters = [];
+
+    if( dhis2.ou.memoryOnly ) {
+        adapters = [ dhis2.storage.InMemoryAdapter ];
+    } else {
+        adapters = [ dhis2.storage.IndexedDBAdapter, dhis2.storage.DomLocalStorageAdapter, dhis2.storage.InMemoryAdapter ];
+    }
+
+    dhis2.ou.store = new dhis2.storage.Store({
+        name: OU_STORE_NAME,
+        objectStores: [
+            {
+                name: OU_TREE_KEY,
+                adapters: adapters
+            }
+        ]
+    });
+
+    dhis2.ou.store.open().done( function() {
+    } );
+});
+
 var d2Services = angular.module('d2Services', ['ngResource'])
 
 /* Factory for loading translation strings */
@@ -3080,11 +3116,63 @@ var d2Services = angular.module('d2Services', ['ngResource'])
         return promise;
     }
 })
+.service('DHIS2OuService', function($q){
 
+    //dhis2.util.namespace('dhis2.ou');
+    var store = null;
+    var memoryOnly = $('html').hasClass('ie7') || $('html').hasClass('ie8');
+    var adapters = [];
+    var storeOpened = false;
+    if( memoryOnly ) {
+        adapters = [ dhis2.storage.InMemoryAdapter ];
+    } else {
+        adapters = [ dhis2.storage.IndexedDBAdapter, dhis2.storage.DomLocalStorageAdapter, dhis2.storage.InMemoryAdapter ];
+    }
 
+    store = new dhis2.storage.Store({
+        name: 'dhis2ou',
+        adapters: [dhis2.storage.IndexedDBAdapter, dhis2.storage.DomSessionStorageAdapter, dhis2.storage.InMemoryAdapter],
+        objectStores: ['ouTree']
+    });
 
+    this.openStore = function() {
+        var deferred = $q.defer();
+        store.open().done( function() {
+            storeOpened = true;
+            deferred.resolve();
+        } );
+        return deferred.promise;
+    };
+
+    this.getOuTreeFromStore = function() {
+        var deferred = $q.defer();
+        if (!storeOpened) {
+            this.openStore().then(getOuTree)
+        } else {
+            getOuTree();
+        }
+        function getOuTree() {
+            store.get('ouTree','ouTree').done(function (ouTree) {
+                deferred.resolve(ouTree);
+            });
+        }
+        return deferred.promise;
+    };
+
+    this.setOuTreeInStore = function(ouTree) {
+        if(!storeOpened) {
+            this.openStore().then(setOuTree)
+        } else {
+            setOuTree();
+        }
+        function setOuTree() {
+            store.set( 'ouTree', ouTree );
+        }
+    };
+
+})
 /* Factory for fetching OrgUnit */
-.factory('OrgUnitFactory', function($http, DHIS2URL, $q, $window, NotificationService, $translate, SessionStorageService, DateUtils) {
+.factory('OrgUnitFactory', function($http, DHIS2URL, $q, $window, NotificationService, $translate, SessionStorageService, DateUtils, DHIS2OuService) {
     var orgUnit, orgUnitPromise, rootOrgUnitPromise,orgUnitTreePromise;
     var indexedDB = $window.indexedDB;
     var db = null;
@@ -3175,35 +3263,22 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                 getOu();                
             }
             function getOu() {
-                var tx = db.transaction(["ou"]);
-                var store = tx.objectStore("ou");
+                var tx = db.transaction(["ouTree"]);
+                var store = tx.objectStore("ouTree");
                 var query = store.get(uid);
 
                 query.onsuccess = function(e){
-                    if(e.target.result){                        
+                    if(e.target.result){
                         deferred.resolve(e.target.result);
-                    }
-                    else{
-                        var t = db.transaction(["ouPartial"]);
-                        var s = t.objectStore("ouPartial");
-                        var q = s.get(uid);
-                        q.onsuccess = function(e){
-                            if( e.target.result ){
-                                deferred.resolve(e.target.result);
+                    } else {
+                        $http.get( DHIS2URL + '/organisationUnits/'+ uid + '.json?fields=id,displayName,closedDate,openingDate' ).then(function(response){
+                            if( response && response.data ){
+                                deferred.resolve( {id: response.data.id, n: response.data.displayName, cdate: response.data.closedDate, odate: response.data.openingDate});
                             }
-                            else{
-                                $http.get( DHIS2URL + '/organisationUnits/'+ uid + '.json?fields=id,displayName,closedDate,openingDate' ).then(function(response){
-                                    if( response && response.data ){
-                                        deferred.resolve( {id: response.data.id, n: response.data.displayName, cdate: response.data.closedDate, odate: response.data.openingDate});
-                                    }
-                                });
-                            }
-                        };
-                        q.onerror = function(e){                            
-                            deferred.reject();
-                        };
+                        });
                     }
                 };
+
                 query.onerror = function(e){
                     deferred.reject();
                 };
@@ -3214,14 +3289,14 @@ var d2Services = angular.module('d2Services', ['ngResource'])
             var deferred = $q.defer();
             this.getFromStoreOrServer(orgUnitId).then(function (ou) {
                 var closed = false;
-                if( ou ){                    
+                if( ou ){
                     if( ou.cdate ){
-                        closed = DateUtils.isBeforeToday( ou.cdate ) ? true : false;                                                
-                    }                    
+                        closed = DateUtils.isBeforeToday( ou.cdate ) ? true : false;
+                    }
                     if(!closed && ou.odate ){
                         closed = DateUtils.isAfterToday( ou.odate ) ? true : false;
                     }
-                }                
+                }
                 if( closed ){
                     NotificationService.displayHeaderMessage( $translate.instant('orgunit_closed') );
                 }
@@ -3230,7 +3305,7 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                 }
                 deferred.resolve( closed );
             });
-            
+
             return deferred.promise;
         },
         getOus : function(orgUnitId) {
@@ -3270,23 +3345,39 @@ var d2Services = angular.module('d2Services', ['ngResource'])
             //Get orgunits for the logged in user
             var that = this;
             var currentOrgUnitSelected;
-            this.getViewTreeRoot().then(function(response) {
-                var orgUnits = response.organisationUnits;
+
+            DHIS2OuService.getOuTreeFromStore().then(function(orgUnits){
+                if(orgUnits && orgUnits.length > 0){
+                    if (!orgUnitId) {
+                        orgUnits["selected"] = orgUnits[0];
+                        deferred.resolve(orgUnits);
+                    } else {
+                        findOrgUnitFromTree(orgUnits);
+                    }
+                } else {
+                    that.getViewTreeRoot().then(function(response) {
+                        if(response && response.organisationUnits) {
+                            findOrgUnitFromTree(response.organisationUnits);
+                        }
+                    });
+                }
+            });
+
+            function findOrgUnitFromTree(orgUnits) {
                 var selectedOuFetched = false;
                 var levelsFetched = 0;
                 var orgUnitTree = null;
-                angular.forEach(orgUnits, function(ou){
-                    console.log(response);
+                angular.forEach(orgUnits, function (ou) {
                     ou.show = true;
                     levelsFetched = ou.level;
-                    if( orgUnitId && orgUnitId === ou.id ){
+                    if (orgUnitId && orgUnitId === ou.id) {
                         selectedOuFetched = true;
                         currentOrgUnitSelected = ou;
                     }
-                    angular.forEach(ou.children, function(o){
+                    angular.forEach(ou.children, function (o) {
                         levelsFetched = o.level;
                         o.hasChildren = o.children && o.children.length > 0 ? true : false;
-                        if( orgUnitId && !selectedOuFetched && orgUnitId === ou.id ){
+                        if (orgUnitId && !selectedOuFetched && orgUnitId === ou.id) {
                             selectedOuFetched = true;
                             currentOrgUnitSelected = o;
                         }
@@ -3295,33 +3386,35 @@ var d2Services = angular.module('d2Services', ['ngResource'])
 
                 levelsFetched = levelsFetched > 0 ? levelsFetched - 1 : levelsFetched;
 
-                if(  orgUnitId && !selectedOuFetched ){
+                if (orgUnitId && !selectedOuFetched) {
                     var parents = null;
-                    that.get( orgUnitId ).then(function( ou ){
-                        if( ou && ou.path ){
+                    that.get(orgUnitId).then(function (ou) {
+                        if (ou && ou.path) {
                             parents = ou.path.substring(1, ou.path.length);
                             parents = parents.split("/");
-                            if( parents && parents.length > 0 ){
+                            if (parents && parents.length > 0) {
                                 var url = "fields=id,displayName,path,level,";
-                                for( var i=levelsFetched; i<ou.level; i++){
+                                for (var i = levelsFetched; i < ou.level; i++) {
                                     url = url + "children[id,displayName,level,path,";
                                 }
 
-                                url = url.substring(0, url.length-1);
-                                for( var i=levelsFetched; i<ou.level; i++){
+                                url = url.substring(0, url.length - 1);
+                                for (var i = levelsFetched; i < ou.level; i++) {
                                     url = url + "]";
                                 }
 
-                                that.getOrgUnits(parents[levelsFetched], url).then(function(response){
-                                    if( response && response.organisationUnits && response.organisationUnits[0] ){
+                                that.getOrgUnits(parents[levelsFetched], url).then(function (response) {
+                                    if (response && response.organisationUnits && response.organisationUnits[0]) {
                                         response.organisationUnits[0].show = true;
                                         response.organisationUnits[0].hasChildren = response.organisationUnits[0].children && response.organisationUnits[0].children.length > 0 ? true : false;
-                                        response.organisationUnits[0] = expandOrgUnit(response.organisationUnits[0], ou );
+                                        response.organisationUnits[0] = expandOrgUnit(response.organisationUnits[0], ou);
                                         currentOrgUnitSelected = response.organisationUnits[0];
-                                        orgUnitTree = attachOrgUnit( orgUnits, response.organisationUnits[0]);
+                                        orgUnitTree = attachOrgUnit(orgUnits, response.organisationUnits[0]);
                                         //ou.hasChildren = o.children && o.children.length > 0 ? true : false;
                                         //ou.show = true;
                                         orgUnitTree["selected"] = ou;
+                                        //that.setOrgUnitTreeInStore(orgUnitTree);
+                                        DHIS2OuService.setOuTreeInStore(orgUnitTree);
                                         deferred.resolve(orgUnitTree);
                                     }
                                 });
@@ -3329,14 +3422,13 @@ var d2Services = angular.module('d2Services', ['ngResource'])
                         }
                     });
                 } else {
-                    if(currentOrgUnitSelected) {
-                        orgUnits["selected"] = currentOrgUnitSelected;
-                    }
+                    orgUnits["selected"] = orgUnits[0];
+                    DHIS2OuService.setOuTreeInStore(orgUnitTree);
                     deferred.resolve(orgUnits);
 
                 }
-            });
-        return deferred.promise;
+            };
+            return deferred.promise;
     },
     expandCollapse: function(orgUnit) {
         if (orgUnit.hasChildren) {
