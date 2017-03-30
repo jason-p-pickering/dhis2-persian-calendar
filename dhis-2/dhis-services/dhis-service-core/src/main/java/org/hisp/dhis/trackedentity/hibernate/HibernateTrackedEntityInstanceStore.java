@@ -298,14 +298,12 @@ public class HibernateTrackedEntityInstanceStore
         while ( rowSet.next() )
         {
             final Map<String, String> map = new HashMap<>();
-
-            map.put( TRACKED_ENTITY_INSTANCE_ID, rowSet.getString( TRACKED_ENTITY_INSTANCE_ID ) );
-            map.put( CREATED_ID, rowSet.getString( CREATED_ID ) );
-            map.put( LAST_UPDATED_ID, rowSet.getString( LAST_UPDATED_ID ) );
-            map.put( ORG_UNIT_ID, rowSet.getString( ORG_UNIT_ID ) );
-            map.put( ORG_UNIT_NAME, rowSet.getString( ORG_UNIT_NAME ) );
-            map.put( TRACKED_ENTITY_ID, rowSet.getString( TRACKED_ENTITY_ID ) );
-            map.put( INACTIVE_ID, rowSet.getString( INACTIVE_ID ) );
+            
+            for( String col : getStaticGridColumns() )
+            {
+            	map.put( col, rowSet.getString( col ) );
+            }
+            
 
             for ( QueryItem item : params.getAttributes() )
             {
