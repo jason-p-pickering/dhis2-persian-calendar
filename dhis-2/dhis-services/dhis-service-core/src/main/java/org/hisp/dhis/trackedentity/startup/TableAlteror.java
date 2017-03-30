@@ -243,17 +243,15 @@ public class TableAlteror
         executeSql( "ALTER TABLE trackedentityattribute DROP COLUMN groupBy" );
 
         executeSql( "update trackedentityattribute set aggregationype='AVERAGE' where aggregationtype is null" );
-
-        executeSql( "update trackedentityattribute set searchscope='NOT_SEARCHABLE' where confidential=true" );
-        executeSql( "update trackedentityattribute set searchscope='SEARCH_ORG_UNITS' where searchscope is null" );
-        executeSql( "update trackedentityattribute set searchscope='SEARCH_ORG_UNITS' where searchscope='SEARCH_OUS'" );
-        executeSql( "update trackedentityattribute set searchscope='DATA_CAPTURE_ORG_UNITS' where searchscope='OWN_OUS'" );
+        
+        executeSql( "ALTER TABLE trackedentityattribute DROP COLUMN searchscope" );        
+        executeSql( "UPDATE program_attributes SET searchscope = 'NOT_SEARCHABLE' WHERE trackedentityattributeid IN (SELECT trackedentityattributeid FROM trackedentityattribute WHERE confidential = true)" );
+        executeSql( "update program_attributes set searchscope='SEARCH_ORG_UNITS' where searchscope is null" );
+        executeSql( "update program_attributes set renderoptionsasradio = false where renderoptionsasradio is null" );
 
         executeSql( "DROP TABLE orgunitgroupprograms" );
 
-        executeSql( "ALTER TABLE programstageinstance DROP COLUMN completed" );
-
-        executeSql( "update program_attributes set mandatory = false where mandatory is null" );
+        executeSql( "ALTER TABLE programstageinstance DROP COLUMN completed" );        
 
         executeSql( "update trackedentityattribute set confidential = false where confidential is null;" );
         

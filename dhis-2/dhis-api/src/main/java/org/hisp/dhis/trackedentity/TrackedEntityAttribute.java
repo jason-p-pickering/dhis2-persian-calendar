@@ -84,8 +84,7 @@ public class TrackedEntityAttribute
     private Boolean orgunitScope = false;
 
     private Boolean programScope = false;
-
-    private TrackedEntityAttributeSearchScope searchScope;
+    
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -390,19 +389,7 @@ public class TrackedEntityAttribute
     public void setConfidential( Boolean confidential )
     {
         this.confidential = confidential;
-    }
-
-    @JsonProperty
-    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
-    public TrackedEntityAttributeSearchScope getSearchScope()
-    {
-        return searchScope;
-    }
-
-    public void setSearchScope( TrackedEntityAttributeSearchScope searchScope )
-    {
-        this.searchScope = searchScope;
-    }
+    }    
 
     @Override
     public void mergeWith( IdentifiableObject other, MergeMode mergeMode )
@@ -427,8 +414,7 @@ public class TrackedEntityAttribute
                 generated = trackedEntityAttribute.isGenerated();
                 pattern = trackedEntityAttribute.getPattern();
                 orgunitScope = trackedEntityAttribute.getOrgunitScope();
-                programScope = trackedEntityAttribute.getProgramScope();
-                searchScope = trackedEntityAttribute.getSearchScope();
+                programScope = trackedEntityAttribute.getProgramScope();                
                 optionSet = trackedEntityAttribute.getOptionSet();
             }
             else if ( mergeMode.isMerge() )
@@ -445,8 +431,7 @@ public class TrackedEntityAttribute
                 generated = trackedEntityAttribute.isGenerated() == null ? generated : trackedEntityAttribute.isGenerated();
                 pattern = trackedEntityAttribute.getPattern() == null ? pattern : trackedEntityAttribute.getPattern();
                 orgunitScope = trackedEntityAttribute.getOrgunitScope() == null ? orgunitScope : trackedEntityAttribute.getOrgunitScope();
-                programScope = trackedEntityAttribute.getProgramScope() == null ? programScope : trackedEntityAttribute.getProgramScope();
-                searchScope = trackedEntityAttribute.getSearchScope() == null ? searchScope : trackedEntityAttribute.getSearchScope();
+                programScope = trackedEntityAttribute.getProgramScope() == null ? programScope : trackedEntityAttribute.getProgramScope();                
                 optionSet = trackedEntityAttribute.getOptionSet() == null ? optionSet : trackedEntityAttribute.getOptionSet();
             }
         }

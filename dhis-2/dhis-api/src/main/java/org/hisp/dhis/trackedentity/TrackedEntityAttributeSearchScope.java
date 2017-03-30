@@ -34,5 +34,5 @@ package org.hisp.dhis.trackedentity;
  */
 public enum TrackedEntityAttributeSearchScope
 {
-    NOT_SEARCHABLE, DATA_CAPTURE_ORG_UNITS, SEARCH_ORG_UNITS, ALL_ORG_UNITS
+    NOT_SEARCHABLE, WITHIN_OWN_ORG_UNITS, DATA_CAPTURE_ORG_UNITS, WITHIN_SEARCH_ORG_UNITS, ALL_ORG_UNITS
 }

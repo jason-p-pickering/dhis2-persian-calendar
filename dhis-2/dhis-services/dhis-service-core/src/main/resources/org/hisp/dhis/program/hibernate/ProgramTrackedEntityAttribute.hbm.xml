@@ -34,6 +34,14 @@
       <key column="programtrackedentityattributeid" foreign-key="fk_programtrackedentityattributegroupmembers_attributeid" />
       <many-to-many class="org.hisp.dhis.program.ProgramTrackedEntityAttributeGroup"  column="programtrackedentityattributegroupid"   foreign-key="fk_programtrackedentityattributegroupmembers_groupid" />
     </set>
+    
+    <property name="searchScope" length="40" column="searchscope">
+      <type name="org.hibernate.type.EnumType">
+        <param name="enumClass">org.hisp.dhis.trackedentity.TrackedEntityAttributeSearchScope</param>
+        <param name="useNamed">true</param>
+        <param name="type">12</param>
+      </type>
+    </property>
 
   </class>
 

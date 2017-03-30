@@ -44,6 +44,7 @@ import org.hisp.dhis.common.MergeMode;
 import org.hisp.dhis.common.ValueType;
 import org.hisp.dhis.legend.LegendSet;
 import org.hisp.dhis.trackedentity.TrackedEntityAttribute;
+import org.hisp.dhis.trackedentity.TrackedEntityAttributeSearchScope;
 
 import java.util.HashSet;
 import java.util.List;
@@ -73,6 +74,8 @@ public class ProgramTrackedEntityAttribute
     private Boolean renderOptionsAsRadio = false;
 
     private Set<ProgramTrackedEntityAttributeGroup> groups = new HashSet<>();
+    
+    private TrackedEntityAttributeSearchScope searchScope;
 
     // -------------------------------------------------------------------------
     // Constructors
@@ -312,6 +315,18 @@ public class ProgramTrackedEntityAttribute
     {
         this.renderOptionsAsRadio = renderOptionsAsRadio;
     }
+    
+    @JsonProperty
+    @JacksonXmlProperty( namespace = DxfNamespaces.DXF_2_0 )
+    public TrackedEntityAttributeSearchScope getSearchScope()
+    {
+        return searchScope;
+    }
+
+    public void setSearchScope( TrackedEntityAttributeSearchScope searchScope )
+    {
+        this.searchScope = searchScope;
+    }
 
     @Override
     public void mergeWith( IdentifiableObject other, MergeMode mergeMode )
@@ -331,6 +346,7 @@ public class ProgramTrackedEntityAttribute
                 mandatory = programTrackedEntityAttribute.isMandatory();
                 allowFutureDate = programTrackedEntityAttribute.getAllowFutureDate();
                 renderOptionsAsRadio = programTrackedEntityAttribute.getRenderOptionsAsRadio();
+                searchScope = programTrackedEntityAttribute.getSearchScope();
             }
             else if ( mergeMode.isMerge() )
             {
@@ -340,6 +356,7 @@ public class ProgramTrackedEntityAttribute
                 mandatory = programTrackedEntityAttribute.isMandatory() == null ? mandatory : programTrackedEntityAttribute.isMandatory();
                 allowFutureDate = programTrackedEntityAttribute.getAllowFutureDate() == null ? allowFutureDate : programTrackedEntityAttribute.getAllowFutureDate();
                 renderOptionsAsRadio = programTrackedEntityAttribute.getRenderOptionsAsRadio() == null ? renderOptionsAsRadio : programTrackedEntityAttribute.getRenderOptionsAsRadio();
+                searchScope = programTrackedEntityAttribute.getSearchScope() == null ? searchScope : programTrackedEntityAttribute.getSearchScope();
             }
 
             groups.clear();
