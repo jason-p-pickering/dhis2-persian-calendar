@@ -483,6 +483,11 @@ public class DefaultTrackedEntityInstanceService
         {
             throw new IllegalQueryException( "Attribute does not exist: " + item );
         }
+        
+        if( at.isConfidentialBool() )
+        {
+        	throw new IllegalQueryException( "Attribute is confidential; can not be used for searching: " + item );
+        }
 
         return new QueryItem( at, null, at.getValueType(), at.getAggregationType(), at.getOptionSet() );
     }

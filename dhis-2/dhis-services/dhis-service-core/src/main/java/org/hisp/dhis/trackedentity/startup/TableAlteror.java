@@ -246,7 +246,7 @@ public class TableAlteror
         
         executeSql( "ALTER TABLE trackedentityattribute DROP COLUMN searchscope" );        
         executeSql( "UPDATE program_attributes SET searchscope = 'NOT_SEARCHABLE' WHERE trackedentityattributeid IN (SELECT trackedentityattributeid FROM trackedentityattribute WHERE confidential = true)" );
-        executeSql( "update program_attributes set searchscope='SEARCH_ORG_UNITS' where searchscope is null" );
+        executeSql( "update program_attributes set searchscope='WITHIN_REGISTRATION_ORG_UNIT' where searchscope='SEARCH_ORG_UNITS'" );
         executeSql( "update program_attributes set renderoptionsasradio = false where renderoptionsasradio is null" );
 
         executeSql( "DROP TABLE orgunitgroupprograms" );
