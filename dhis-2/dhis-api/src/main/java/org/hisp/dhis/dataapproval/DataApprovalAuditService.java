@@ -1,4 +1,4 @@
-package org.hisp.dhis.dataelement.hibernate;
+package org.hisp.dhis.dataapproval;
 
 /*
  * Copyright (c) 2004-2017, University of Oslo
@@ -28,37 +28,29 @@ package org.hisp.dhis.dataelement.hibernate;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+import org.hisp.dhis.organisationunit.OrganisationUnit;
+
 import java.util.List;
 
-import org.hibernate.criterion.Restrictions;
-import org.hisp.dhis.common.DataDimensionType;
-import org.hisp.dhis.common.hibernate.HibernateIdentifiableObjectStore;
-import org.hisp.dhis.dataelement.CategoryOptionGroup;
-import org.hisp.dhis.dataelement.CategoryOptionGroupSet;
-import org.hisp.dhis.dataelement.CategoryOptionGroupStore;
-
 /**
- * @author Lars Helge Overland
+ * @author Jim Grace
  */
-public class HibernateCategoryOptionGroupStore
-    extends HibernateIdentifiableObjectStore<CategoryOptionGroup>
-    implements CategoryOptionGroupStore
+public interface DataApprovalAuditService
 {
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<CategoryOptionGroup> getCategoryOptionGroups( CategoryOptionGroupSet groupSet )
-    {
-        return getSharingCriteria()
-            .createAlias( "groupSets", "groupSet" )
-            .add( Restrictions.eqOrIsNull( "groupSet.id", groupSet.getId() ) ).list();
-    }
+    String ID = DataApprovalAuditService.class.getName();
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<CategoryOptionGroup> getCategoryOptionGroupsNoAcl( DataDimensionType dataDimensionType, boolean dataDimension )
-    {
-        return getCriteria( 
-            Restrictions.eq( "dataDimensionType", dataDimensionType ),
-            Restrictions.eq( "dataDimension", dataDimension ) ).list();
-    }
+    /**
+     * Deletes all data approval audits for the given organisation unit.
+     *
+     * @param organisationUnit the organisation unit.
+     */
+    void deleteDataApprovalAudits( OrganisationUnit organisationUnit );
+
+    /**
+     * Returns DataApprovalAudit objects for query parameters.
+     *
+     * @param params Data approval audit query parameters.
+     * @return matching DataApproval object, if any
+     */
+    public List<DataApprovalAudit> getDataApprovalAudits( DataApprovalAuditQueryParams params );
 }

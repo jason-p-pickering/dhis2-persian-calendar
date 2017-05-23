@@ -1,4 +1,4 @@
-package org.hisp.dhis.dataelement.hibernate;
+package org.hisp.dhis.dataapproval;
 
 /*
  * Copyright (c) 2004-2017, University of Oslo
@@ -28,37 +28,25 @@ package org.hisp.dhis.dataelement.hibernate;
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.List;
-
-import org.hibernate.criterion.Restrictions;
-import org.hisp.dhis.common.DataDimensionType;
-import org.hisp.dhis.common.hibernate.HibernateIdentifiableObjectStore;
-import org.hisp.dhis.dataelement.CategoryOptionGroup;
-import org.hisp.dhis.dataelement.CategoryOptionGroupSet;
-import org.hisp.dhis.dataelement.CategoryOptionGroupStore;
-
 /**
- * @author Lars Helge Overland
+ * @author Jim Grace
  */
-public class HibernateCategoryOptionGroupStore
-    extends HibernateIdentifiableObjectStore<CategoryOptionGroup>
-    implements CategoryOptionGroupStore
+public enum DataApprovalAction
 {
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<CategoryOptionGroup> getCategoryOptionGroups( CategoryOptionGroupSet groupSet )
+    APPROVE( "approve" ),
+    UNAPPROVE( "unapprove"),
+    ACCEPT( "accept" ),
+    UNACCEPT( "unaccept" );
+
+    private final String value;
+
+    DataApprovalAction( String value )
     {
-        return getSharingCriteria()
-            .createAlias( "groupSets", "groupSet" )
-            .add( Restrictions.eqOrIsNull( "groupSet.id", groupSet.getId() ) ).list();
+        this.value = value;
     }
 
-    @Override
-    @SuppressWarnings("unchecked")
-    public List<CategoryOptionGroup> getCategoryOptionGroupsNoAcl( DataDimensionType dataDimensionType, boolean dataDimension )
+    public String getValue()
     {
-        return getCriteria( 
-            Restrictions.eq( "dataDimensionType", dataDimensionType ),
-            Restrictions.eq( "dataDimension", dataDimension ) ).list();
+        return value;
     }
 }
